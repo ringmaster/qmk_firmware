@@ -45,3 +45,5 @@
 
 // Allows media codes to properly register in macros and rotary encoder code
 #define TAP_CODE_DELAY 10
+
+#define UNICODE_SELECTED_MODES UC_MAC

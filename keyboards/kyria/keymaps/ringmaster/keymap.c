@@ -9,6 +9,7 @@
  #include QMK_KEYBOARD_H
 
  uint16_t copy_paste_timer;
+ uint16_t macro_timer;
 
  enum layers {
     QWERTY = 0,
@@ -21,7 +22,19 @@
 
 enum custom_keycodes {
     KC_COPYPASTE = SAFE_RANGE,
-    KC_REMENU
+    KC_REMENU,
+    KC_MACRO
+};
+
+#define NUM_REMENUS (7)
+enum menustates {
+    REM_REDO = 0,
+    REM_ALTTAB,
+    REM_MSCROLL,
+    REM_PSCROLL,
+    REM_VOL,
+    REM_HORIZ,
+    REM_VERT
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -42,12 +55,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [QWERTY] = LAYOUT(
         KC_GESC, LT(3,KC_Q),   KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(4,KC_P),      KC_BSPC,
         KC_TAB , LT(2,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(1,KC_SCLN),   RGUI_T(KC_QUOT),
-        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,     KC_V,    KC_B,    KC_LCTL,  MO(5),   KC_NLCK,    KC_DEL,     KC_N,    KC_M,    KC_COMM, KC_DOT, LCTL_T(KC_SLSH), KC_RSFT,
+        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,     KC_V,    KC_B,    KC_LCTL,  MO(5),   KC_MACRO,   KC_DEL,     KC_N,    KC_M,    KC_COMM, KC_DOT, LCTL_T(KC_SLSH), KC_RSFT,
                                       KC_CAPS,  KC_LALT, KC_LGUI, KC_ENT,   KC_GRV,  KC_LEAD,  LT(2,KC_SPC), KC_COPYPASTE, KC_CAPS, KC_REMENU
 
     ),
     [SYMBOLS] = LAYOUT(
-        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                          KC_TRNS,  KC_HOME,        KC_PGUP,  KC_END,        KC_TRNS,  KC_BSLS,
+        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                          KC_PAST,  KC_HOME,        KC_PGUP,  KC_END,        KC_TRNS,  KC_BSLS,
         KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                          KC_LEFT,  KC_DOWN,        KC_UP,    KC_RGHT,       KC_TRNS,  KC_QUOT,
         KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_AMPR,  LALT(KC_LEFT),  KC_PGDN,  LALT(KC_RGHT), KC_SLSH,  KC_MINS,
                                      KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_SCLN,  KC_EQL,   KC_EQL,   KC_SCLN,  KC_UNDS,  KC_LSCR,        KC_TRNS
@@ -56,7 +69,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                      KC_PAST, KC_7, KC_8, KC_9, KC_PPLS, KC_BSPC,
         KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                      KC_NO,   KC_4, KC_5, KC_6, KC_MINS, KC_UNDS,
         KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,           KC_NO, KC_1, KC_2, KC_3, KC_EQL, KC_RSFT,
-                             KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_0, KC_LNUM, KC_TRNS
+                             KC_TRNS, KC_TRNS, KC_TRNS, LGUI(KC_SPC), KC_TRNS, KC_TRNS, KC_TRNS, KC_0, KC_LNUM, KC_TRNS
     ),
     [FNKEYS] = LAYOUT(KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F7, KC_F8, KC_F9, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F4, KC_F5, KC_F6, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F1, KC_F2, KC_F3, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F12, KC_F11, KC_F10, KC_NO),
     [MOUSE] = LAYOUT(KC_NO, KC_NO, KC_BTN2, KC_MS_U, KC_BTN1, KC_WH_U, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_MS_L, KC_MS_D, KC_MS_R, KC_WH_D, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO),
@@ -68,6 +81,12 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     return update_tri_layer_state(state, LOWER, RAISE, ADJUST);
 }
 */
+
+bool is_recording = false;
+bool is_alt_tab_active = false;
+bool is_menu_active = false;
+uint16_t alt_tab_timer = 0;
+int remenu[] = {1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
@@ -82,13 +101,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             break;
-    }
+        case KC_MACRO:  // One key macros
+            if (record->event.pressed) {
+                macro_timer = timer_read();
+            } else {
+                if (is_recording) {
+                    tap_code16(DM_RSTP);
+                } else {
+                    if (timer_elapsed(macro_timer) > TAPPING_TERM) {  // Hold, record macro
+                        tap_code16(DM_REC1);
+                    } else { // Tap, play macro
+                        tap_code16(DM_PLY1);
+                    }
+                }
+                is_recording = !is_recording;
+            }
+            break;
+        case KC_REMENU:
+            if (record->event.pressed) {
+                is_menu_active = !is_menu_active;
+            }
+            break;
+        }
     return true;
 }
 
-
-bool is_alt_tab_active = false;
-uint16_t alt_tab_timer = 0;
 
 LEADER_EXTERNS();
 
@@ -116,8 +153,25 @@ void matrix_scan_user(void) {
         SEQ_TWO_KEYS(KC_P, KC_P) { // Fill or open 1Password
             SEND_STRING(SS_LGUI(SS_LALT("\\")));
         }
-        SEQ_ONE_KEY(KC_H) {
-            SEND_STRING("¯\\_(ツ)_/¯");
+        SEQ_ONE_KEY(KC_H) {  //¯\_(ツ)_/¯
+            #ifdef UNICODE_ENABLE
+            send_unicode_string("¯\\_(ツ)_/¯");
+            #else
+            SEND_STRING(SS_LALT("00af") "\\_(" SS_LALT("30c4") ")_/" SS_LALT("00af"));
+            #endif
+        }
+        SEQ_TWO_KEYS(KC_T, KC_F) {
+            #ifdef UNICODE_ENABLE
+            send_unicode_string("(╯°□°)╯︵  ┻━┻");
+            #else
+            SEND_STRING("(" SS_LALT("232B") SS_LALT("00B0") SS_LALT("25A1") SS_LALT("00B0")  ")" "╯︵  ┻━┻");
+            #endif
+        }
+        SEQ_THREE_KEYS(KC_D, KC_T, KC_F) {
+            #ifdef UNICODE_ENABLE
+            send_unicode_string("┻━┻ ︵ヽ(°□°)ﾉ︵ ┻━┻");
+            #else
+            #endif
         }
         SEQ_TWO_KEYS(KC_C, KC_C) { // Code block
             SEND_STRING("```" SS_LSFT("\n\n") "```" SS_TAP(X_UP));
@@ -125,23 +179,10 @@ void matrix_scan_user(void) {
     }
 }
 
+
 #ifdef OLED_DRIVER_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 	return OLED_ROTATION_180;
-}
-
-static void render_kyria_logo(void) {
-    static const char PROGMEM kyria_logo[] = {
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,128,128,192,224,240,112,120, 56, 60, 28, 30, 14, 14, 14,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7, 14, 14, 14, 30, 28, 60, 56,120,112,240,224,192,128,128,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,192,224,240,124, 62, 31, 15,  7,  3,  1,128,192,224,240,120, 56, 60, 28, 30, 14, 14,  7,  7,135,231,127, 31,255,255, 31,127,231,135,  7,  7, 14, 14, 30, 28, 60, 56,120,240,224,192,128,  1,  3,  7, 15, 31, 62,124,240,224,192,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,240,252,255, 31,  7,  1,  0,  0,192,240,252,254,255,247,243,177,176, 48, 48, 48, 48, 48, 48, 48,120,254,135,  1,  0,  0,255,255,  0,  0,  1,135,254,120, 48, 48, 48, 48, 48, 48, 48,176,177,243,247,255,254,252,240,192,  0,  0,  1,  7, 31,255,252,240,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,254,255,255,  1,  1,  7, 30,120,225,129,131,131,134,134,140,140,152,152,177,183,254,248,224,255,255,224,248,254,183,177,152,152,140,140,134,134,131,131,129,225,120, 30,  7,  1,  1,255,255,254,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0,255,255,  0,  0,192,192, 48, 48,  0,  0,240,240,  0,  0,  0,  0,  0,  0,240,240,  0,  0,240,240,192,192, 48, 48, 48, 48,192,192,  0,  0, 48, 48,243,243,  0,  0,  0,  0,  0,  0, 48, 48, 48, 48, 48, 48,192,192,  0,  0,  0,  0,  0,
-        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,127,255,255,128,128,224,120, 30,135,129,193,193, 97, 97, 49, 49, 25, 25,141,237,127, 31,  7,255,255,  7, 31,127,237,141, 25, 25, 49, 49, 97, 97,193,193,129,135, 30,120,224,128,128,255,255,127,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0, 63, 63,  3,  3, 12, 12, 48, 48,  0,  0,  0,  0, 51, 51, 51, 51, 51, 51, 15, 15,  0,  0, 63, 63,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 48, 48, 63, 63, 48, 48,  0,  0, 12, 12, 51, 51, 51, 51, 51, 51, 63, 63,  0,  0,  0,  0,  0,
-        0,  0,  0,  0, 15, 63,255,248,224,128,  0,  0,  3, 15, 63,127,255,239,207,141, 13, 12, 12, 12, 12, 12, 12, 12, 30,127,225,128,  0,  0,255,255,  0,  0,128,225,127, 30, 12, 12, 12, 12, 12, 12, 12, 13,141,207,239,255,127, 63, 15,  3,  0,  0,128,224,248,255, 63, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,  3,  7, 15, 62,124,248,240,224,192,128,  1,  3,  7, 15, 30, 28, 60, 56,120,112,112,224,224,225,231,254,248,255,255,248,254,231,225,224,224,112,112,120, 56, 60, 28, 30, 15,  7,  3,  1,128,192,224,240,248,124, 62, 15,  7,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  3,  7, 15, 14, 30, 28, 60, 56,120,112,112,112,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,112,112,112,120, 56, 60, 28, 30, 14, 15,  7,  3,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
-    };
-    oled_write_raw_P(kyria_logo, sizeof(kyria_logo));
 }
 
 static void render_qmk_logo(void) {
@@ -153,13 +194,55 @@ static void render_qmk_logo(void) {
   oled_write_P(qmk_logo, false);
 }
 
+static void render_kyria_logo(void) {
+    /*
+    static const char PROGMEM kyria_logo[] = {
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,128,128,192,224,240,112,120, 56, 60, 28, 30, 14, 14, 14,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7, 14, 14, 14, 30, 28, 60, 56,120,112,240,224,192,128,128,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,192,224,240,124, 62, 31, 15,  7,  3,  1,128,192,224,240,120, 56, 60, 28, 30, 14, 14,  7,  7,135,231,127, 31,255,255, 31,127,231,135,  7,  7, 14, 14, 30, 28, 60, 56,120,240,224,192,128,  1,  3,  7, 15, 31, 62,124,240,224,192,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,240,252,255, 31,  7,  1,  0,  0,192,240,252,254,255,247,243,177,176, 48, 48, 48, 48, 48, 48, 48,120,254,135,  1,  0,  0,255,255,  0,  0,  1,135,254,120, 48, 48, 48, 48, 48, 48, 48,176,177,243,247,255,254,252,240,192,  0,  0,  1,  7, 31,255,252,240,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,254,255,255,  1,  1,  7, 30,120,225,129,131,131,134,134,140,140,152,152,177,183,254,248,224,255,255,224,248,254,183,177,152,152,140,140,134,134,131,131,129,225,120, 30,  7,  1,  1,255,255,254,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0,255,255,  0,  0,192,192, 48, 48,  0,  0,240,240,  0,  0,  0,  0,  0,  0,240,240,  0,  0,240,240,192,192, 48, 48, 48, 48,192,192,  0,  0, 48, 48,243,243,  0,  0,  0,  0,  0,  0, 48, 48, 48, 48, 48, 48,192,192,  0,  0,  0,  0,  0,
+        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,127,255,255,128,128,224,120, 30,135,129,193,193, 97, 97, 49, 49, 25, 25,141,237,127, 31,  7,255,255,  7, 31,127,237,141, 25, 25, 49, 49, 97, 97,193,193,129,135, 30,120,224,128,128,255,255,127,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0, 63, 63,  3,  3, 12, 12, 48, 48,  0,  0,  0,  0, 51, 51, 51, 51, 51, 51, 15, 15,  0,  0, 63, 63,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 48, 48, 63, 63, 48, 48,  0,  0, 12, 12, 51, 51, 51, 51, 51, 51, 63, 63,  0,  0,  0,  0,  0,
+        0,  0,  0,  0, 15, 63,255,248,224,128,  0,  0,  3, 15, 63,127,255,239,207,141, 13, 12, 12, 12, 12, 12, 12, 12, 30,127,225,128,  0,  0,255,255,  0,  0,128,225,127, 30, 12, 12, 12, 12, 12, 12, 12, 13,141,207,239,255,127, 63, 15,  3,  0,  0,128,224,248,255, 63, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  3,  7, 15, 62,124,248,240,224,192,128,  1,  3,  7, 15, 30, 28, 60, 56,120,112,112,224,224,225,231,254,248,255,255,248,254,231,225,224,224,112,112,120, 56, 60, 28, 30, 15,  7,  3,  1,128,192,224,240,248,124, 62, 15,  7,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  3,  7, 15, 14, 30, 28, 60, 56,120,112,112,112,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,112,112,112,120, 56, 60, 28, 30, 14, 15,  7,  3,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+    };
+    oled_write_raw_P(kyria_logo, sizeof(kyria_logo));
+    */
+    render_qmk_logo();
+    oled_write_P(PSTR("     Kyria:Ringmaster\n"), false);
+}
+
+static void menu_name(int menu) {
+    switch(menu) {
+        case REM_REDO: oled_write_P(PSTR("re/undo"), false); break;
+        case REM_ALTTAB: oled_write_P(PSTR("alt-tab"), false); break;
+        case REM_MSCROLL: oled_write_P(PSTR("mscroll"), false); break;
+        case REM_VOL: oled_write_P(PSTR("volume "), false); break;
+        case REM_PSCROLL: oled_write_P(PSTR("pscroll"), false); break;
+        case REM_HORIZ: oled_write_P(PSTR(" horiz "), false); break;
+        case REM_VERT: oled_write_P(PSTR(" vert  "), false); break;
+        default: oled_write_P(PSTR(" -none-"), false); break;
+    }
+}
+
 static void render_status(void) {
     // QMK Logo and version information
     render_qmk_logo();
-    oled_write_P(PSTR("     Kyria:Ringmaster\n\n"), false);
+    oled_write_P(PSTR("     Kyria:Ringmaster\n"), false);
+
+    menu_name(remenu[0 + 2 * get_highest_layer(layer_state)]);
+    if (is_menu_active) {
+        oled_write_P(PSTR(" <--> "), false);
+    } else {
+        oled_write_P(PSTR("      "), false);
+    }
+    menu_name(remenu[1 + 2 * get_highest_layer(layer_state)]);
+    oled_write_P(PSTR("\n"), false);
+
 
     // Host Keyboard Layer Status
     oled_write_P(PSTR("Layer: "), false);
+
     switch (get_highest_layer(layer_state)) {
         case QWERTY:
             oled_write_P(PSTR("Default\n"), false);
@@ -181,10 +264,10 @@ static void render_status(void) {
     }
 
     // Host Keyboard LED Status
-    uint8_t led_usb_state = host_keyboard_leds();
-    oled_write_P(IS_LED_ON(led_usb_state, USB_LED_NUM_LOCK)    ? PSTR("NUMLCK ") : PSTR(" -NUM- "), false);
-    oled_write_P(IS_LED_ON(led_usb_state, USB_LED_CAPS_LOCK)   ? PSTR("CAPLCK ") : PSTR("       "), false);
-    oled_write_P(IS_LED_ON(led_usb_state, USB_LED_SCROLL_LOCK) ? PSTR("SCRLCK ") : PSTR(" -SCR- "), false);
+    led_t led_state = host_keyboard_led_state();
+    oled_write_P(led_state.num_lock    ? PSTR("NUMLCK ") : PSTR("       "), false);
+    oled_write_P(led_state.caps_lock   ? PSTR("CAPLCK ") : PSTR("       "), false);
+    oled_write_P(led_state.scroll_lock ? PSTR("SCRLCK ") : PSTR("       "), false);
 }
 
 void oled_task_user(void) {
@@ -198,47 +281,78 @@ void oled_task_user(void) {
 
 #ifdef ENCODER_ENABLE
 void encoder_update_user(uint8_t index, bool cclockwise) {
-    if (index == 0) {
-        switch (biton32(layer_state)) {
-            case QWERTY:
-                // History scrubbing. For Adobe products, hold shift while moving
-                // backward to go forward instead.
+    if (is_menu_active) {
+        if (cclockwise) {
+            remenu[index  + 2 * get_highest_layer(layer_state)]--;
+        } else {
+            remenu[index  + 2 * get_highest_layer(layer_state)]++;
+        }
+        if (remenu[index  + 2 * get_highest_layer(layer_state)] < 0) {
+            remenu[index  + 2 * get_highest_layer(layer_state)] = NUM_REMENUS - 1;
+        }
+        if (remenu[index  + 2 * get_highest_layer(layer_state)] >= NUM_REMENUS) {
+            remenu[index  + 2 * get_highest_layer(layer_state)] = 0;
+        }
+    }
+    else {
+        switch (remenu[index  + 2 * get_highest_layer(layer_state)]) {
+            case REM_REDO:
                 if (cclockwise) {
                     tap_code16(G(KC_Z));
                 } else {
                     tap_code16(S(G(KC_Z)));
                 }
                 break;
-            default:
-                // Switch between windows on Windows with alt tab.
+            case REM_ALTTAB:
                 alt_tab_timer = timer_read();
                 if (!is_alt_tab_active) {
                     is_alt_tab_active = true;
                     register_code(KC_LGUI);
                 }
                 if (cclockwise) {
-                    tap_code16(KC_TAB);
-                } else {
                     tap_code16(S(KC_TAB));
+                } else {
+                    tap_code16(KC_TAB);
                 }
                 break;
-        }
-    } else if (index == 1) {
-        switch (biton32(layer_state)) {
-            case QWERTY:
-                // Scrolling with PageUp and PgDn.
+            case REM_MSCROLL:
+                // Scrolling with Mouse wheel
                 if (cclockwise) {
                     tap_code(KC_WH_U);
                 } else {
                     tap_code(KC_WH_D);
                 }
                 break;
-            default:
+            case REM_VOL:
                 // Volume control.
                 if (cclockwise) {
                     tap_code(KC_VOLU);
                 } else {
                     tap_code(KC_VOLD);
+                }
+                break;
+            case REM_PSCROLL:
+                // Scroll by pgup/dn.
+                if (cclockwise) {
+                    tap_code(KC_PGDN);
+                } else {
+                    tap_code(KC_PGUP);
+                }
+                break;
+            case REM_HORIZ:
+                // Horizontal arrows
+                if (cclockwise) {
+                    tap_code(KC_LEFT);
+                } else {
+                    tap_code(KC_RIGHT);
+                }
+                break;
+            case REM_VERT:
+                // Vertical arrows
+                if (cclockwise) {
+                    tap_code(KC_UP);
+                } else {
+                    tap_code(KC_DOWN);
                 }
                 break;
         }
