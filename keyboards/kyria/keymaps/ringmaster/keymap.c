@@ -280,9 +280,11 @@ void oled_task_user(void) {
 #endif
 
 #ifdef ENCODER_ENABLE
-void encoder_update_user(uint8_t index, bool cclockwise) {
+void encoder_update_user(uint8_t index, bool clockwise) {
+    bool real_clockwise = index == 0 ? !clockwise : clockwise;
+
     if (is_menu_active) {
-        if (cclockwise) {
+        if (real_clockwise) {
             remenu[index  + 2 * get_highest_layer(layer_state)]--;
         } else {
             remenu[index  + 2 * get_highest_layer(layer_state)]++;
@@ -297,7 +299,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
     else {
         switch (remenu[index  + 2 * get_highest_layer(layer_state)]) {
             case REM_REDO:
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code16(G(KC_Z));
                 } else {
                     tap_code16(S(G(KC_Z)));
@@ -309,7 +311,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                     is_alt_tab_active = true;
                     register_code(KC_LGUI);
                 }
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code16(S(KC_TAB));
                 } else {
                     tap_code16(KC_TAB);
@@ -317,7 +319,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                 break;
             case REM_MSCROLL:
                 // Scrolling with Mouse wheel
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code(KC_WH_U);
                 } else {
                     tap_code(KC_WH_D);
@@ -325,7 +327,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                 break;
             case REM_VOL:
                 // Volume control.
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code(KC_VOLU);
                 } else {
                     tap_code(KC_VOLD);
@@ -333,7 +335,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                 break;
             case REM_PSCROLL:
                 // Scroll by pgup/dn.
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code(KC_PGDN);
                 } else {
                     tap_code(KC_PGUP);
@@ -341,7 +343,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                 break;
             case REM_HORIZ:
                 // Horizontal arrows
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code(KC_LEFT);
                 } else {
                     tap_code(KC_RIGHT);
@@ -349,7 +351,7 @@ void encoder_update_user(uint8_t index, bool cclockwise) {
                 break;
             case REM_VERT:
                 // Vertical arrows
-                if (cclockwise) {
+                if (real_clockwise) {
                     tap_code(KC_UP);
                 } else {
                     tap_code(KC_DOWN);
