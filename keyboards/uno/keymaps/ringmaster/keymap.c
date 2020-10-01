@@ -10,11 +10,7 @@ static uint16_t pressTimer = 0xFFFF;
 #define ENTER_PRESS 750
 #define CHAR_WAIT 350
 #define SPACE_WAIT 1000
-#define RESET_LENGTH 3000
-const uint8_t PROGMEM RGBLED_RAINBOW_MOOD_INTERVALS[] = { 10, 25, 50 };
 
-char stringToSend[2] = "a";
-char maxLetter = 'z';
 uint16_t code = 0;
 char letters[32] = "                               ";
 
