@@ -6,13 +6,17 @@ enum uno_keycode
 };
 
 static uint16_t pressTimer = 0xFFFF;
-#define DOT_DASH_PRESS 200
+
+#define FWPM 5
+#define DOT_DASH_PRESS 200 // The defining line between a dot and a dash in ms
 #define ENTER_PRESS 750
 #define CHAR_WAIT 350
 #define SPACE_WAIT 1000
 
+#define MAX_CODE_LENGTH 256 // This is the max length of an allowed letter as a power of 2
+
 uint16_t code = 0;
-char letters[32] = "                               ";
+char letters[MAX_CODE_LENGTH];
 bool waiting_space = false;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -39,9 +43,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     code = (code << 1) + 1;
                 } else {
                     SEND_STRING(SS_TAP(X_ENTER));
-                    code = 64;
+                    code = MAX_CODE_LENGTH;
                 }
-                if (code >= 64) {
+                if (code >= MAX_CODE_LENGTH) {
                     code = 0;
                     waiting_space = false;
                 }
@@ -56,6 +60,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void matrix_init_user(void) {
+    for (int z = 0; z < MAX_CODE_LENGTH; z++) {
+        letters[z] = ' ';
+    }
+
     letters[0b101] = 'a';
     letters[0b11000] = 'b';
     letters[0b11010] = 'c';
@@ -82,6 +90,35 @@ void matrix_init_user(void) {
     letters[0b11001] = 'x';
     letters[0b11011] = 'y';
     letters[0b11100] = 'z';
+
+    letters[0b111111] = '0';
+    letters[0b101111] = '1';
+    letters[0b100111] = '2';
+    letters[0b100011] = '3';
+    letters[0b100001] = '4';
+    letters[0b100000] = '5';
+    letters[0b110000] = '6';
+    letters[0b111000] = '7';
+    letters[0b111100] = '8';
+    letters[0b111110] = '9';
+
+    letters[0b101000] = '&';
+    letters[0b1011110] = '\'';
+    letters[0b1011010] = '@';
+    letters[0b1101101] = ')';
+    letters[0b110110] = '(';
+    letters[0b1111000] = ':';
+    letters[0b1110011] = ',';
+    letters[0b110001] = '=';
+    letters[0b1101011] = '!';
+    letters[0b1010101] = '.';
+    letters[0b1100001] = '-';
+    letters[0b101010] = '+';
+    letters[0b1010010] = '"';
+    letters[0b1001100] = '?';
+    letters[0b110010] = '/';
+
+    letters[0b10101] = '\n';
 }
 
 void matrix_scan_user(void) {
