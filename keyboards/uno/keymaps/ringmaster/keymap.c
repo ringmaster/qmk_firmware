@@ -13,12 +13,7 @@ static uint16_t pressTimer = 0xFFFF;
 
 uint16_t code = 0;
 char letters[32] = "                               ";
-
-uint8_t presetCounter = 0;
 bool waiting_space = false;
-
-#define COUNTER X_A
-
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT(
