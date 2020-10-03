@@ -16,12 +16,14 @@
 
 #include QMK_KEYBOARD_H
 #include <stdio.h>
+#include <print.h>
 
 enum layers {
     _BAS = 0,
     _ARR,
     _GAM,
     _MOU,
+    _MID,
     _CAL,
     _COL,
     _DOC
@@ -37,6 +39,7 @@ enum custom_keycodes {
 };
 
 bool menu_active = false;
+uint16_t key_is_down = KC_NO;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -48,10 +51,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [_ARR] = LAYOUT(
-        KC_HOME, KC_UP, KC_END,
-        KC_LEFT, KC_DOWN, KC_RIGHT,
-        KC_TRNS, KC_TRNS, KC_BSPC,
-        KC_TRNS, KC_TRNS, KC_ENT
+        KC_HOME, KC_UP, KC_PGUP,
+        KC_LEFT, KC_SPACE, KC_RIGHT,
+        KC_END, KC_DOWN, KC_PGDN,
+        KC_TRNS, KC_BSPC, KC_DOT_ENTER
     ),
 
     [_GAM] = LAYOUT(
@@ -64,8 +67,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_MOU] = LAYOUT(
         KC_BTN2, KC_MS_U, KC_BTN1,
         KC_MS_L, KC_MS_D, KC_MS_R,
-        KC_LOCK_LSHIFT, KC_LOCK_LCTL, KC_F,
+        KC_LSHIFT, KC_LCTL, KC_F,
         KC_TRNS, KC_SPACE, KC_ENT
+    ),
+
+    [_MID] = LAYOUT(
+        MI_B_1, MI_C_2, MI_D_2,
+        MI_F_1, MI_G_1, MI_A_1,
+        MI_C_1, MI_D_1, MI_E_1,
+        KC_TRNS, MI_OCTD, MI_OCTU
     ),
 
     [_CAL] = LAYOUT(
@@ -90,24 +100,20 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 
+void keyboard_post_init_user(void) {
+  // Customise these values to desired behaviour
+  debug_enable=true;
+  //debug_matrix=true;
+  //debug_keyboard=true;
+  //debug_mouse=true;
+}
+
 //#ifdef OLED_DRIVER_ENABLE
 extern rgblight_config_t rgblight_config;
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     return OLED_ROTATION_270;  // flips the display 180 degrees if offhand
 }
-
-/*
-static void render_logo(void) {
-    static const char PROGMEM qmk_logo[] = {
-        0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94,
-        0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4,
-        0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0x00
-    };
-
-    oled_write_P(qmk_logo, false);
-}
-*/
 
 void blank(int lines) {
     int z;
@@ -118,13 +124,14 @@ void blank(int lines) {
 }
 
 void oled_task_user(void) {
-    static char led_buf[30];
+    static char led_buf[50];
     //oled_clear();
 
     //*
     // Host Keyboard Layer Status
     if (menu_active) {
-        oled_write_P(PSTR(">"), false);
+        snprintf(led_buf, sizeof(led_buf) - 1, "%c", 0x10);
+        oled_write(led_buf, false);
     }
     else {
         oled_write_P(PSTR(" "), false);
@@ -145,6 +152,9 @@ void oled_task_user(void) {
         case _MOU:
             oled_write_P(PSTR("MOU"), false);
             break;
+        case _MID:
+            oled_write_P(PSTR("MID"), false);
+            break;
         case _CAL:
             oled_write_P(PSTR("CAL"), false);
             break;
@@ -156,12 +166,14 @@ void oled_task_user(void) {
             oled_write_P(PSTR("???"), false);
     }
     if (menu_active) {
-        oled_write_ln_P(PSTR("<"), false);
+        snprintf(led_buf, sizeof(led_buf) - 1, "%c", 0x11);
+        oled_write(led_buf, false);
     }
     else {
         oled_write_ln_P(PSTR(" "), false);
     }
     oled_write_P(PSTR("-----"), false);
+    oled_write_P(PSTR("     "), false);
 
     //*/
 
@@ -178,7 +190,6 @@ void oled_task_user(void) {
     //*
     switch (biton32(layer_state)) {
         case _BAS:
-            oled_write_P(PSTR("     "), false);
             oled_write_P(PSTR(" 789 "), false);
             oled_write_P(PSTR(" 456 "), false);
             oled_write_P(PSTR(" 123 "), false);
@@ -191,9 +202,9 @@ void oled_task_user(void) {
             blank(2);
             break;
         case _ARR:
-            oled_write_P(PSTR(" HUE "), false);
-            oled_write_P(PSTR(" LDR "), false);
-            blank(12);
+            snprintf(led_buf, sizeof(led_buf) - 1, " H%c%c  %c %c  E%c%c\n", 0x18, 0x1E, 0x1B, 0x1A, 0x19, 0x1F);
+            oled_write(led_buf, false);
+            blank(10);
             break;
 
         case _GAM:
@@ -204,21 +215,38 @@ void oled_task_user(void) {
             blank(0);
             break;
 
+        case _MOU:
+            snprintf(led_buf, sizeof(led_buf) - 1, " 2%c1  %c%c%c ", 0x18, 0x1B, 0x19, 0x1A);
+            oled_write(led_buf, false);
+            blank(10);
+            break;
+
+        case _MID:
+            snprintf(led_buf, sizeof(led_buf) - 1, "O: %d", midi_config.octave);
+            oled_write(led_buf, false);
+            blank(10);
+            break;
+
+        case _CAL:
+            blank(10);
+            break;
+
         case _COL:
             // Host Keyboard RGB backlight status
 
             //0uint8_t led_mode = rgblight_get_mode();
 
-            snprintf(led_buf, sizeof(led_buf) - 1, "RGB:%cM: %2d\nh: %2ds: %2dv: %2d\n",
+            snprintf(led_buf, sizeof(led_buf) - 1, "RGB:%cM: %2d\nh: %2ds: %2dv: %2d\nS: %2d\n",
                 rgblight_config.enable ? '*' : '.', (uint8_t)rgblight_config.mode,
                 (uint8_t)(rgblight_config.hue / RGBLIGHT_HUE_STEP),
                 (uint8_t)(rgblight_config.sat / RGBLIGHT_SAT_STEP),
-                (uint8_t)(rgblight_config.val / RGBLIGHT_VAL_STEP));
+                (uint8_t)(rgblight_config.val / RGBLIGHT_VAL_STEP),
+                (uint8_t)rgblight_get_speed());
             oled_write(led_buf, false);
             blank(1);
             break;
         default:
-            blank(14);
+            blank(10);
             break;
     }
     //*/
@@ -227,6 +255,19 @@ void oled_task_user(void) {
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     static uint16_t zero_timer;
+    static uint16_t shift_timer;
+    static uint16_t ctrl_timer;
+    static bool shift_lock = false;
+    static bool ctrl_lock = false;
+    static bool shift_multi = false;
+    static bool ctrl_multi = false;
+
+    if(record->event.pressed) {
+        key_is_down = keycode;
+    }
+    else {
+        key_is_down = KC_NO;
+    }
 
     switch (keycode) {
         case KC_9_DEL:
@@ -265,9 +306,101 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 SEND_STRING("Hi!  This is some doumentation.");
             }
             return false;
+
+        case KC_LOCK_LSHIFT:
+            if(record->event.pressed) {
+                if (!shift_lock) {
+                    register_code16(KC_LSFT);
+                    shift_timer = timer_read();
+                }
+                shift_multi = false;
+            } else {
+                if (timer_elapsed(shift_timer) < TAPPING_TERM || shift_lock || shift_multi) {
+                    unregister_code16(KC_LSFT);
+                    shift_lock = false;
+                }
+                else {
+                    shift_lock = !shift_lock;
+                }
+            }
+            return false;
+        case KC_LOCK_LCTL:
+            if(record->event.pressed) {
+                if (!ctrl_lock) {
+                    ctrl_timer = timer_read();
+                    register_code16(KC_LCTL);
+                }
+                ctrl_multi = false;
+            } else {
+                if (timer_elapsed(ctrl_timer) < TAPPING_TERM || ctrl_lock || ctrl_multi) {
+                    unregister_code16(KC_LCTL);
+                    ctrl_lock = false;
+                }
+                else {
+                    ctrl_lock = !ctrl_lock;
+                }
+            }
+            return false;
     }
+
+    if (keycode != KC_LOCK_LSHIFT) {
+        shift_lock = false;
+        shift_multi = true;
+    }
+    if (keycode != KC_LOCK_LCTL) {
+        ctrl_lock = false;
+        ctrl_multi = true;
+    }
+
     return true;
 };
+
+void knob_color(bool clockwise) {
+    switch (key_is_down) {
+        case RGB_M_B:
+            if (clockwise) {
+                rgblight_increase_speed_noeeprom();
+            } else {
+                rgblight_decrease_speed_noeeprom();
+            }
+            break;
+
+        case RGB_VAI:
+        case RGB_VAD:
+            if (clockwise) {
+                rgblight_increase_val_noeeprom();
+            } else {
+                rgblight_decrease_val_noeeprom();
+            }
+            break;
+
+        case RGB_SAI:
+        case RGB_SAD:
+            if (clockwise) {
+                rgblight_increase_sat_noeeprom();
+            } else {
+                rgblight_decrease_sat_noeeprom();
+            }
+            break;
+
+        case RGB_HUI:
+        case RGB_HUD:
+            if (clockwise) {
+                rgblight_increase_hue_noeeprom();
+            } else {
+                rgblight_decrease_hue_noeeprom();
+            }
+            break;
+
+        default:
+            if (clockwise) {
+                rgblight_step_noeeprom();
+            } else {
+                rgblight_step_reverse_noeeprom();
+            }
+            break;
+    }
+}
 
 //#ifdef ENCODER_ENABLE
 void encoder_update_user(uint8_t index, bool clockwise) {
@@ -289,32 +422,39 @@ void encoder_update_user(uint8_t index, bool clockwise) {
         layer_move(current_layer);
     }
     else {
-        switch (biton32(layer_state)) {
+        switch (get_highest_layer(layer_state)) {
             case _BAS:
-                // History scrubbing. For Adobe products, hold shift while moving
-                // backward to go forward instead.
                 if (clockwise) {
-                    tap_code16(S(G(KC_Z)));
+                    tap_code16(KC__VOLUP);
+                    //tap_code16(S(G(KC_Z)));
                 } else {
-                    tap_code16(G(KC_Z));
+                    tap_code16(KC__VOLDOWN);
+                    //tap_code16(G(KC_Z));
                 }
                 break;
             case _COL:
-                // History scrubbing. For Adobe products, hold shift while moving
-                // backward to go forward instead.
-                if (clockwise) {
-                    rgblight_step();
-                } else {
-                    rgblight_step_reverse();
-                }
+                knob_color(clockwise);
                 break;
             case _MOU:
-                // History scrubbing. For Adobe products, hold shift while moving
-                // backward to go forward instead.
                 if (clockwise) {
                     tap_code16(KC_WH_U);
                 } else {
                     tap_code16(KC_WH_D);
+                }
+                break;
+            case _MID:
+                if (clockwise) {
+                    dprint("midi clockwise");
+                    if (midi_config.octave < (MIDI_OCTAVE_MAX - MIDI_OCTAVE_MIN)) {
+                        midi_config.octave++;
+                        dprintf("midi octave %d\n", midi_config.octave);
+                    }
+                } else {
+                    dprint("midi counter-clockwise");
+                    if (midi_config.octave > 0) {
+                        midi_config.octave--;
+                        dprintf("midi octave %d\n", midi_config.octave);
+                    }
                 }
                 break;
             default:
