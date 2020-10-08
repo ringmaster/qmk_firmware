@@ -16,6 +16,13 @@
 
 #pragma once
 
+#ifndef NO_DEBUG
+#define NO_DEBUG
+#endif // !NO_DEBUG
+#if !defined(NO_PRINT) && !defined(CONSOLE_ENABLE)
+#define NO_PRINT
+#endif // !NO_PRINT
+
 #ifdef OLED_DRIVER_ENABLE
   #define OLED_DISPLAY_128X64
 #endif
@@ -48,3 +55,8 @@
 
 #define UNICODE_SELECTED_MODES UC_MAC
 #define IGNORE_MOD_TAP_INTERRUPT
+
+//#define MIDI_ADVANCED
+
+#define NO_ACTION_MACRO
+#define NO_ACTION_FUNCTION

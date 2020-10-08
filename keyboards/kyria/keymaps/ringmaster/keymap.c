@@ -80,9 +80,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 */
     [_QWERTY] = LAYOUT(
-        KC_GESC, LT(3,KC_Q),   KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(4,KC_P),      KC_BSPC,
-        KC_TAB , LT(2,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(1,KC_SCLN),   RGUI_T(KC_QUOT),
-        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,     KC_V,    KC_B,    KC_LCTL,  MO(5),   KC_MACRO,   KC_DEL,     KC_N,    KC_M,    KC_COMM, KC_DOT, LCTL_T(KC_SLSH), RSFT_T(KC_ENT),
+        KC_GESC, LT(_FNKEYS,KC_Q),   KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(4,KC_P),      KC_BSPC,
+        KC_TAB , LT(_NUMBERS,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(1,KC_SCLN),   RGUI_T(KC_QUOT),
+        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,     KC_V,    KC_B,    KC_LCTL,  MO(_KEEB),   KC_MACRO,   KC_DEL,     KC_N,    KC_M,    KC_COMM, KC_DOT, LCTL_T(KC_SLSH), KC_RSFT,
                                       KC_CAPS,  KC_LALT, KC_LGUI, KC_ENT,   KC_GRV,  KC_LEAD,  LT(_SPACE, KC_SPC), KC_COPYPASTE, KC_CAPS, KC_REMENU
 
     ),
@@ -101,7 +101,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_SPACE] = LAYOUT(
         KC_TRNS,  KC_1,  KC_2,   KC_3,  KC_4,  KC_5,                                                       KC_6, KC_7, KC_8, KC_9, KC_0, KC_DEL,
         KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                          KC_NO, KC_ENT, KC_EQL, KC_LBRC, KC_RBRC, KC_PIPE,
-        KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,      KC_NO, KC_1, KC_2, KC_3, KC_EQL, KC_RSFT,
+        KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,      KC_NO, KC_1, KC_2, KC_3, KC_EQL, KC_ENT,
                              KC_TRNS, KC_TRNS, KC_TRNS, LGUI(KC_SPC), KC_TRNS, KC_TRNS, KC_TRNS, KC_0, KC_LNUM, KC_TRNS
     ),
     [_FNKEYS] = LAYOUT(KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F7, KC_F8, KC_F9, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F4, KC_F5, KC_F6, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F1, KC_F2, KC_F3, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F12, KC_F11, KC_F10, KC_NO),
@@ -185,6 +185,15 @@ void matrix_scan_user(void) {
         }
         SEQ_TWO_KEYS(KC_P, KC_P) { // Fill or open 1Password
             SEND_STRING(SS_LGUI(SS_LALT("\\")));
+        }
+        SEQ_TWO_KEYS(KC_M, KC_M) {  // Send MIDI Note
+            tap_code16(MI_C_1);
+        }
+        SEQ_TWO_KEYS(KC_M, KC_COMMA) {  // Send MIDI Note
+            tap_code16(MI_D_1);
+        }
+        SEQ_TWO_KEYS(KC_M, KC_DOT) {  // Send MIDI Note
+            tap_code16(MI_E_1);
         }
         SEQ_ONE_KEY(KC_H) {  //¯\_(ツ)_/¯
             #ifdef UNICODE_ENABLE
@@ -277,19 +286,22 @@ static void render_status(void) {
     oled_write_P(PSTR("Layer: "), false);
 
     switch (get_highest_layer(layer_state)) {
-        case QWERTY:
+        case _QWERTY:
             oled_write_P(PSTR("Default\n"), false);
             break;
-        case SYMBOLS:
+        case _SYMBOLS:
             oled_write_P(PSTR("Symbols\n"), false);
             break;
-        case FNKEYS:
+        case _FNKEYS:
             oled_write_P(PSTR("FnKeys\n"), false);
             break;
-        case NUMBERS:
+        case _NUMBERS:
             oled_write_P(PSTR("Numbers\n"), false);
             break;
-        case MOUSE:
+        case _SPACE:
+            oled_write_P(PSTR("Space\n"), false);
+            break;
+        case _MOUSE:
             oled_write_P(PSTR("Mouse\n"), false);
             break;
         default:
