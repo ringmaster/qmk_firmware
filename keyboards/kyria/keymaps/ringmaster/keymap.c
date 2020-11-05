@@ -7,6 +7,7 @@
  */
 
 uint16_t copy_paste_timer;
+uint16_t shift_enter_timer;
 uint16_t macro_timer;
 
 enum layers {
@@ -22,7 +23,8 @@ enum layers {
 enum custom_keycodes {
     KC_COPYPASTE = SAFE_RANGE,
     KC_REMENU,
-    KC_MACRO
+    KC_MACRO,
+    KC_RSFT_ENT
 };
 
 #define NUM_REMENUS (7)
@@ -36,32 +38,9 @@ enum menustates {
     REM_VERT
 };
 
-typedef struct {
-    bool is_press_action;
-    uint8_t state;
-} tap;
-
-enum {
-    SINGLE_TAP = 1,
-    SINGLE_HOLD,
-    DOUBLE_TAP,
-    DOUBLE_HOLD,
-    DOUBLE_SINGLE_TAP, // Send two single taps
-    TRIPLE_TAP,
-    TRIPLE_HOLD
-};
-
-// Tap dance enums
-enum {
-    ENT_RSFT,
-    SOME_OTHER_DANCE
-};
-
-uint8_t cur_dance(qk_tap_dance_state_t *state);
-
-// For the x tap dance. Put it here so it can be used in any keymap
-void x_finished(qk_tap_dance_state_t *state, void *user_data);
-void x_reset(qk_tap_dance_state_t *state, void *user_data);
+#ifndef LEADER_ENABLE
+#define KC_LEAD KC_SPC
+#endif
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
@@ -82,8 +61,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //*
     [_QWERTY] = LAYOUT(
         KC_GESC, LT(_FNKEYS,KC_Q),    KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(_MOUSE,KC_P),      KC_BSPC,
-        KC_TAB , LT(_NUMBERS,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
-        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,  KC_V,     KC_B,    KC_LCTL,  MO(_KEEB),  KC_MACRO,     KC_DEL,  KC_N,  KC_M,    KC_COMM, KC_DOT,  LCTL_T(KC_SLSH), TD(ENT_RSFT),
+        KC_TAB , KC_A,   KC_S,  KC_D,     LT(_NUMBERS,KC_F),    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
+        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,  KC_V,     KC_B,    KC_LCTL,  MO(_KEEB),  KC_MACRO,     KC_DEL,  KC_N,  KC_M,    KC_COMM, KC_DOT,  LCTL_T(KC_SLSH), KC_RSFT_ENT,
                                       KC_CAPS,  KC_LALT, KC_LGUI, KC_ENT,   KC_GRV,                 KC_LEAD,  LT(_SPACE,KC_SPC), KC_COPYPASTE, KC_CAPS, KC_REMENU
 
     ),
@@ -91,7 +70,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                          KC_PAST,  KC_HOME,        KC_PGUP,  KC_END,        KC_TRNS,  KC_BSLS,
         KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                          KC_LEFT,  KC_DOWN,        KC_UP,    KC_RGHT,       KC_TRNS,  KC_QUOT,
         KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_AMPR,  LALT(KC_LEFT),  KC_PGDN,  LALT(KC_RGHT), KC_SLSH,  KC_MINS,
-                                     KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_SCLN,  KC_EQL,   KC_EQL,   KC_SCLN,  KC_UNDS,  KC_LSCR,        KC_TRNS
+                                     KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_SCLN,  KC_EQL,   KC_EQL,   KC_SPC,  KC_UNDS,  KC_LSCR,        KC_TRNS
         ),
     [_NUMBERS] = LAYOUT(
         KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                      KC_PAST, KC_7, KC_8, KC_9, KC_PPLS, KC_BSPC,
@@ -154,7 +133,21 @@ bool is_menu_active = false;
 uint16_t alt_tab_timer = 0;
 int remenu[] = {1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+void keyboard_post_init_user(void) {
+  // Customise these values to desired behaviour
+  debug_enable=true;
+  //debug_matrix=true;
+  debug_keyboard=true;
+  //debug_mouse=true;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    #ifdef CONSOLE_ENABLE
+        uprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
+    #endif
+    if (keycode != KC_RSFT_ENT) {
+        shift_enter_timer = TAPPING_TERM + 1;
+    }
     switch (keycode) {
         case KC_COPYPASTE:  // One key copy/paste,
             if (record->event.pressed) {
@@ -188,12 +181,26 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 is_menu_active = !is_menu_active;
             }
             break;
+        case KC_RSFT_ENT:
+            if (record->event.pressed) {
+                if (timer_elapsed(shift_enter_timer) < TAPPING_TERM) {
+                    tap_code16(KC_ENT);
+                }
+                shift_enter_timer = timer_read();
+                register_code(KC_RSFT);
+            }
+            else {
+                unregister_code(KC_RSFT);
+            }
+            return false;
+            break;
         }
     return true;
 }
 
-
+#ifdef LEADER_ENABLE
 LEADER_EXTERNS();
+#endif
 
 void matrix_scan_user(void) {
     if (is_alt_tab_active) {
@@ -203,6 +210,7 @@ void matrix_scan_user(void) {
         }
     }
 
+#ifdef LEADER_ENABLE
     LEADER_DICTIONARY() {
         leading = false;
         leader_end();
@@ -255,6 +263,7 @@ void matrix_scan_user(void) {
             SEND_STRING("```" SS_LSFT("\n\n") "```" SS_TAP(X_UP));
         }
     }
+#endif
 }
 
 
@@ -442,88 +451,3 @@ void encoder_update_user(uint8_t index, bool clockwise) {
     }
 }
 #endif
-
-/* Return an integer that corresponds to what kind of tap dance should be executed.
- *
- * How to figure out tap dance state: interrupted and pressed.
- *
- * Interrupted: If the state of a dance dance is "interrupted", that means that another key has been hit
- *  under the tapping term. This is typically indicitive that you are trying to "tap" the key.
- *
- * Pressed: Whether or not the key is still being pressed. If this value is true, that means the tapping term
- *  has ended, but the key is still being pressed down. This generally means the key is being "held".
- *
- * One thing that is currenlty not possible with qmk software in regards to tap dance is to mimic the "permissive hold"
- *  feature. In general, advanced tap dances do not work well if they are used with commonly typed letters.
- *  For example "A". Tap dances are best used on non-letter keys that are not hit while typing letters.
- *
- * Good places to put an advanced tap dance:
- *  z,q,x,j,k,v,b, any function key, home/end, comma, semi-colon
- *
- * Criteria for "good placement" of a tap dance key:
- *  Not a key that is hit frequently in a sentence
- *  Not a key that is used frequently to double tap, for example 'tab' is often double tapped in a terminal, or
- *    in a web form. So 'tab' would be a poor choice for a tap dance.
- *  Letters used in common words as a double. For example 'p' in 'pepper'. If a tap dance function existed on the
- *    letter 'p', the word 'pepper' would be quite frustating to type.
- *
- * For the third point, there does exist the 'DOUBLE_SINGLE_TAP', however this is not fully tested
- *
- */
-uint8_t cur_dance(qk_tap_dance_state_t *state) {
-    if (state->count == 1) {
-        if (/*state->interrupted ||*/ !state->pressed) return SINGLE_TAP;
-        // Key has not been interrupted, but the key is still held. Means you want to send a 'HOLD'.
-        else return SINGLE_HOLD;
-    } else if (state->count == 2) {
-        // DOUBLE_SINGLE_TAP is to distinguish between typing "pepper", and actually wanting a double tap
-        // action when hitting 'pp'. Suggested use case for this return value is when you want to send two
-        // keystrokes of the key, and not the 'double tap' action/macro.
-        /*if (state->interrupted) return DOUBLE_SINGLE_TAP;
-        else*/ if (state->pressed) return DOUBLE_HOLD;
-        else return DOUBLE_TAP;
-    }
-
-    // Assumes no one is trying to type the same letter three times (at least not quickly).
-    // If your tap dance key is 'KC_W', and you want to type "www." quickly - then you will need to add
-    // an exception here to return a 'TRIPLE_SINGLE_TAP', and define that enum just like 'DOUBLE_SINGLE_TAP'
-    if (state->count == 3) {
-        if (/*state->interrupted ||*/ !state->pressed) return TRIPLE_TAP;
-        else return TRIPLE_HOLD;
-    } else return 8; // Magic number. At some point this method will expand to work for more presses
-}
-
-// Create an instance of 'tap' for the 'x' tap dance.
-static tap xtap_state = {
-    .is_press_action = true,
-    .state = 0
-};
-
-void x_finished(qk_tap_dance_state_t *state, void *user_data) {
-    xtap_state.state = cur_dance(state);
-    switch (xtap_state.state) {
-        case SINGLE_TAP: register_code(KC_RSFT); break;
-        case SINGLE_HOLD: register_code(KC_RSFT); break;
-        case DOUBLE_TAP: register_code(KC_ENT); break;
-        case DOUBLE_HOLD: register_code(KC_RSFT); break;
-        // Last case is for fast typing. Assuming your key is `f`:
-        // For example, when typing the word `buffer`, and you want to make sure that you send `ff` and not `Esc`.
-        // In order to type `ff` when typing fast, the next character will have to be hit within the `TAPPING_TERM`, which by default is 200ms.
-        case DOUBLE_SINGLE_TAP: tap_code(KC_RSFT); register_code(KC_RSFT);
-    }
-}
-
-void x_reset(qk_tap_dance_state_t *state, void *user_data) {
-    switch (xtap_state.state) {
-        case SINGLE_TAP: unregister_code(KC_RSFT); break;
-        case SINGLE_HOLD: unregister_code(KC_RSFT); break;
-        case DOUBLE_TAP: unregister_code(KC_ENT); break;
-        case DOUBLE_HOLD: unregister_code(KC_RSFT);
-        case DOUBLE_SINGLE_TAP: unregister_code(KC_RSFT);
-    }
-    xtap_state.state = 0;
-}
-
-qk_tap_dance_action_t tap_dance_actions[] = {
-    [ENT_RSFT] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished, x_reset)
-};
