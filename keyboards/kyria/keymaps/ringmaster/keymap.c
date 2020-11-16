@@ -23,19 +23,33 @@ enum layers {
 enum custom_keycodes {
     KC_COPYPASTE = SAFE_RANGE,
     KC_REMENU,
-    KC_MACRO,
-    KC_RSFT_ENT
+    KC_MACRO
 };
 
 #define NUM_REMENUS (7)
 enum menustates {
-    REM_REDO = 0,
+    REM_COLOR = 0,
+    REM_MODE,
+    REM_REDO,
     REM_ALTTAB,
     REM_MSCROLL,
     REM_PSCROLL,
     REM_VOL,
     REM_HORIZ,
     REM_VERT
+};
+
+enum combos {
+  DF_TAB = 0,
+  JK_ENT
+};
+
+const uint16_t PROGMEM df_combo[] = {KC_D, KC_F, COMBO_END};
+const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
+
+combo_t key_combos[COMBO_COUNT] = {
+  [DF_TAB] = COMBO(df_combo, KC_TAB),
+  [JK_ENT] = COMBO(jk_combo, KC_ENT)
 };
 
 #ifndef LEADER_ENABLE
@@ -61,8 +75,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //*
     [_QWERTY] = LAYOUT(
         KC_GESC, LT(_FNKEYS,KC_Q),    KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(_MOUSE,KC_P),      KC_BSPC,
-        KC_TAB , KC_A,   KC_S,  KC_D,     LT(_NUMBERS,KC_F),    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
-        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,  KC_V,     KC_B,    KC_LCTL,  MO(_KEEB),  KC_MACRO,     KC_DEL,  KC_N,  KC_M,    KC_COMM, KC_DOT,  LCTL_T(KC_SLSH), KC_RSFT_ENT,
+        KC_TAB , LT(_NUMBERS,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
+        KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,  KC_V,     KC_B,    KC_LCTL,  MO(_KEEB),  KC_MACRO,     KC_DEL,  KC_N,  KC_M,    KC_COMM, KC_DOT,  LCTL_T(KC_SLSH), KC_RSFT,
                                       KC_CAPS,  KC_LALT, KC_LGUI, KC_ENT,   KC_GRV,                 KC_LEAD,  LT(_SPACE,KC_SPC), KC_COPYPASTE, KC_CAPS, KC_REMENU
 
     ),
@@ -86,7 +100,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     [_FNKEYS] = LAYOUT(KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F7, KC_F8, KC_F9, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F4, KC_F5, KC_F6, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F1, KC_F2, KC_F3, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F12, KC_F11, KC_F10, KC_NO),
     [_MOUSE] = LAYOUT(KC_NO, KC_NO, KC_BTN2, KC_MS_U, KC_BTN1, KC_WH_U, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_MS_L, KC_MS_D, KC_MS_R, KC_WH_D, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO),
-    [_KEEB] = LAYOUT(BL_ON, RGB_VAI, RGB_SPI, RGB_SAI, RGB_HUI, RGB_TOG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, BL_OFF, RGB_VAD, RGB_SPD, RGB_SAD, RGB_HUD, BL_BRTG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGB_M_T, RGB_M_SN, RGB_M_K, RGB_M_B, RGB_M_P, BL_STEP, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO)
+    [_KEEB] = LAYOUT(RESET, RGB_VAI, RGB_SPI, RGB_SAI, RGB_HUI, RGB_TOG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, DEBUG, RGB_VAD, RGB_SPD, RGB_SAD, RGB_HUD, BL_BRTG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGB_M_T, RGB_M_SN, RGB_M_K, RGB_M_B, RGB_M_P, BL_STEP, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO)
 
 //*/
 /*
@@ -145,9 +159,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     #ifdef CONSOLE_ENABLE
         uprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
     #endif
-    if (keycode != KC_RSFT_ENT) {
-        shift_enter_timer = TAPPING_TERM + 1;
-    }
     switch (keycode) {
         case KC_COPYPASTE:  // One key copy/paste,
             if (record->event.pressed) {
@@ -180,19 +191,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 is_menu_active = !is_menu_active;
             }
-            break;
-        case KC_RSFT_ENT:
-            if (record->event.pressed) {
-                if (timer_elapsed(shift_enter_timer) < TAPPING_TERM) {
-                    tap_code16(KC_ENT);
-                }
-                shift_enter_timer = timer_read();
-                register_code(KC_RSFT);
-            }
-            else {
-                unregister_code(KC_RSFT);
-            }
-            return false;
             break;
         }
     return true;
@@ -301,6 +299,8 @@ static void render_kyria_logo(void) {
 
 static void menu_name(int menu) {
     switch(menu) {
+        case REM_COLOR: oled_write_P(PSTR(" color "), false); break;
+        case REM_MODE: oled_write_P(PSTR(" mode  "), false); break;
         case REM_REDO: oled_write_P(PSTR("re/undo"), false); break;
         case REM_ALTTAB: oled_write_P(PSTR("alt-tab"), false); break;
         case REM_MSCROLL: oled_write_P(PSTR("mscroll"), false); break;
@@ -388,6 +388,20 @@ void encoder_update_user(uint8_t index, bool clockwise) {
     }
     else {
         switch (remenu[index  + 2 * get_highest_layer(layer_state)]) {
+            case REM_COLOR:
+                if (real_clockwise) {
+                    rgblight_increase_hue();
+                } else {
+                    rgblight_decrease_hue();
+                }
+                break;
+            case REM_MODE:
+                if (real_clockwise) {
+                    rgblight_step_noeeprom();
+                } else {
+                    rgblight_step_reverse_noeeprom();
+                }
+                break;
             case REM_REDO:
                 if (real_clockwise) {
                     tap_code16(G(KC_Z));
