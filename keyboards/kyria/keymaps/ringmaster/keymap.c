@@ -1,4 +1,6 @@
 #include QMK_KEYBOARD_H
+//#include <stdio.h>
+//#include <print.h>
 
 /* THIS FILE WAS GENERATED!
  *
@@ -23,7 +25,8 @@ enum layers {
 enum custom_keycodes {
     KC_COPYPASTE = SAFE_RANGE,
     KC_REMENU,
-    KC_MACRO
+    KC_MACRO,
+    KC_RESET_LED
 };
 
 #define NUM_REMENUS (7)
@@ -40,17 +43,19 @@ enum menustates {
 };
 
 enum combos {
-  DF_TAB = 0,
+  FG_TAB = 0,
   JK_ENT
 };
 
-const uint16_t PROGMEM df_combo[] = {KC_D, KC_F, COMBO_END};
+#ifdef COMBO_ENABLE
+const uint16_t PROGMEM fg_combo[] = {KC_F, KC_G, COMBO_END};
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-  [DF_TAB] = COMBO(df_combo, KC_TAB),
+  [FG_TAB] = COMBO(fg_combo, KC_TAB),
   [JK_ENT] = COMBO(jk_combo, KC_ENT)
 };
+#endif
 
 #ifndef LEADER_ENABLE
 #define KC_LEAD KC_SPC
@@ -75,20 +80,20 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //*
     [_QWERTY] = LAYOUT(
         KC_GESC, LT(_FNKEYS,KC_Q),    KC_W,  KC_E,     KC_R,    KC_T,                                               KC_Y,    KC_U,    KC_I,    KC_O,   LT(_MOUSE,KC_P),      KC_BSPC,
-        KC_TAB , LT(_NUMBERS,KC_A),   KC_S,  KC_D,     KC_F,    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
+        KC_TAB , KC_A,   KC_S,  KC_D,     LT(_NUMBERS,KC_F),    KC_G,                                               KC_H,    KC_J,    KC_K,    KC_L,   LT(_SYMBOLS,KC_SCLN),   RGUI_T(KC_QUOT),
         KC_LSFT, LCTL_T(KC_Z), KC_X,  KC_C,  KC_V,     KC_B,    KC_LCTL,  MO(_KEEB),  KC_MACRO,     KC_DEL,  KC_N,  KC_M,    KC_COMM, KC_DOT,  LCTL_T(KC_SLSH), KC_RSFT,
                                       KC_CAPS,  KC_LALT, KC_LGUI, KC_ENT,   KC_GRV,                 KC_LEAD,  LT(_SPACE,KC_SPC), KC_COPYPASTE, KC_CAPS, KC_REMENU
 
     ),
     [_SYMBOLS] = LAYOUT(
-        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                          KC_PAST,  KC_HOME,        KC_PGUP,  KC_END,        KC_TRNS,  KC_BSLS,
+        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                          S(KC_8),  KC_HOME,        KC_PGUP,  KC_END,        KC_TRNS,  KC_BSLS,
         KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                          KC_LEFT,  KC_DOWN,        KC_UP,    KC_RGHT,       KC_TRNS,  KC_QUOT,
         KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_AMPR,  LALT(KC_LEFT),  KC_PGDN,  LALT(KC_RGHT), KC_SLSH,  KC_MINS,
                                      KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_SCLN,  KC_EQL,   KC_EQL,   KC_SPC,  KC_UNDS,  KC_LSCR,        KC_TRNS
         ),
     [_NUMBERS] = LAYOUT(
-        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                      KC_PAST, KC_7, KC_8, KC_9, KC_PPLS, KC_BSPC,
-        KC_TRNS,  KC_HASH,  KC_DLR,  KC_LPRN,  KC_RPRN,  KC_BSLS,                                      KC_NO,   KC_4, KC_5, KC_6, KC_MINS, KC_UNDS,
+        KC_TRNS,  KC_EXLM,  KC_AT,   KC_LCBR,  KC_RCBR,  KC_PIPE,                                      KC_PAST, KC_7, KC_8, KC_9, S(KC_EQL), KC_BSPC,
+        KC_TRNS,  KC_NO,    KC_DLR,  KC_TAB,  KC_NO,   KC_NO,                                       S(KC_SCLN), KC_4, KC_5, KC_6, KC_MINS, KC_UNDS,
         KC_LSFT,  KC_PERC,  KC_CIRC, KC_LBRC,  KC_RBRC,  KC_TILD, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,           KC_NO, KC_1, KC_2, KC_3, KC_EQL, KC_RSFT,
                              KC_TRNS, KC_TRNS, KC_TRNS, LGUI(KC_SPC), KC_TRNS, KC_TRNS, KC_TRNS, KC_0, KC_LNUM, KC_TRNS
     ),
@@ -100,7 +105,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     [_FNKEYS] = LAYOUT(KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F7, KC_F8, KC_F9, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F4, KC_F5, KC_F6, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F1, KC_F2, KC_F3, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_F12, KC_F11, KC_F10, KC_NO),
     [_MOUSE] = LAYOUT(KC_NO, KC_NO, KC_BTN2, KC_MS_U, KC_BTN1, KC_WH_U, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_MS_L, KC_MS_D, KC_MS_R, KC_WH_D, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO),
-    [_KEEB] = LAYOUT(RESET, RGB_VAI, RGB_SPI, RGB_SAI, RGB_HUI, RGB_TOG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, DEBUG, RGB_VAD, RGB_SPD, RGB_SAD, RGB_HUD, BL_BRTG, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGB_M_T, RGB_M_SN, RGB_M_K, RGB_M_B, RGB_M_P, BL_STEP, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO)
+    [_KEEB] = LAYOUT(
+        RESET, RGB_VAI, RGB_SPI, RGB_SAI, RGB_HUI, RGB_TOG,                                KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        DEBUG, RGB_VAD, RGB_SPD, RGB_SAD, RGB_HUD, KC_RESET_LED,                           KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        RGB_M_T, RGB_M_SN, RGB_M_K, RGB_M_B, RGB_M_P, BL_STEP                                                                                                                                                                                                                                                                                   , KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+                                        KC_NO, KC_NO, KC_NO, KC_NO, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO
+    )
 
 //*/
 /*
@@ -147,6 +157,7 @@ bool is_menu_active = false;
 uint16_t alt_tab_timer = 0;
 int remenu[] = {1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+/*
 void keyboard_post_init_user(void) {
   // Customise these values to desired behaviour
   debug_enable=true;
@@ -154,6 +165,7 @@ void keyboard_post_init_user(void) {
   debug_keyboard=true;
   //debug_mouse=true;
 }
+*/
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     #ifdef CONSOLE_ENABLE
@@ -186,12 +198,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
                 is_recording = !is_recording;
             }
-            break;
+            return false;
         case KC_REMENU:
             if (record->event.pressed) {
                 is_menu_active = !is_menu_active;
             }
-            break;
+            return false;
+        case KC_RESET_LED:
+            if (record->event.pressed) {
+                rgblight_disable();
+                rgblight_mode(RGBLIGHT_MODE_STATIC_LIGHT);
+                rgblight_sethsv(0, 255, 128);
+                rgblight_enable();
+            }
+            return false;
         }
     return true;
 }
@@ -224,6 +244,12 @@ void matrix_scan_user(void) {
         }
         SEQ_ONE_KEY(KC_M) {
             SEND_STRING(SS_LGUI(SS_LALT(SS_LSFT(SS_LCTL("M"))))); // Unmute maybe
+        }
+        SEQ_ONE_KEY(KC_F) {
+            SEND_STRING(":)"); // :)
+        }
+        SEQ_ONE_KEY(KC_D) {
+            SEND_STRING(":("); // :(
         }
         SEQ_TWO_KEYS(KC_P, KC_P) { // Fill or open 1Password
             SEND_STRING(SS_LGUI(SS_LALT("\\")));
@@ -271,12 +297,13 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 static void render_qmk_logo(void) {
-  static const char PROGMEM qmk_logo[] = {
-    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,0x90,0x91,0x92,0x93,0x94,
-    0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,0xb0,0xb1,0xb2,0xb3,0xb4,
-    0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,0xd0,0xd1,0xd2,0xd3,0xd4,0};
+    /*static const char PROGMEM qmk_logo[] = {
+        0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,0x90,0x91,0x92,0x93,0x94,
+        0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,0xb0,0xb1,0xb2,0xb3,0xb4,
+        0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,0xd0,0xd1,0xd2,0xd3,0xd4,0
+    };*/
 
-  oled_write_P(qmk_logo, false);
+    //oled_write_P(qmk_logo, false);
 }
 
 static void render_kyria_logo(void) {
@@ -311,6 +338,8 @@ static void menu_name(int menu) {
         default: oled_write_P(PSTR(" -none-"), false); break;
     }
 }
+
+extern rgblight_config_t rgblight_config;
 
 static void render_status(void) {
     // QMK Logo and version information
@@ -358,6 +387,18 @@ static void render_status(void) {
     oled_write_P(led_state.num_lock    ? PSTR("NUMLCK ") : PSTR("       "), false);
     oled_write_P(led_state.caps_lock   ? PSTR("CAPLCK ") : PSTR("       "), false);
     oled_write_P(led_state.scroll_lock ? PSTR("SCRLCK ") : PSTR("       "), false);
+
+    /*
+    static char led_buf[50];
+
+    snprintf(led_buf, sizeof(led_buf) - 1, "RGB:%cM: %2d\nh: %2ds: %2dv: %2d\nS: %2d\n",
+                rgblight_config.enable ? '*' : '.', (uint8_t)rgblight_config.mode,
+                (uint8_t)(rgblight_config.hue / RGBLIGHT_HUE_STEP),
+                (uint8_t)(rgblight_config.sat / RGBLIGHT_SAT_STEP),
+                (uint8_t)(rgblight_config.val / RGBLIGHT_VAL_STEP),
+                (uint8_t)rgblight_get_speed());
+            oled_write(led_buf, false);
+            //*/
 }
 
 void oled_task_user(void) {
