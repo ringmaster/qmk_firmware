@@ -251,6 +251,24 @@ void matrix_scan_user(void) {
         SEQ_ONE_KEY(KC_D) {
             SEND_STRING(":("); // :(
         }
+        SEQ_ONE_KEY(KC_J) {
+            SEND_STRING(":thumbsdown:"); // :)
+        }
+        SEQ_ONE_KEY(KC_K) {
+            SEND_STRING(":thumbsup:"); // :(
+        }
+        SEQ_ONE_KEY(KC_W) {
+            SEND_STRING(":aloha:"); // :(
+        }
+        SEQ_TWO_KEYS(KC_J, KC_J) {
+            SEND_STRING("+:thumbsdown:\n"); // :)
+        }
+        SEQ_TWO_KEYS(KC_K, KC_K) {
+            SEND_STRING("+:thumbsup:\n"); // :(
+        }
+        SEQ_TWO_KEYS(KC_W, KC_W) {
+            SEND_STRING("+:aloha:\n"); // :(
+        }
         SEQ_TWO_KEYS(KC_P, KC_P) { // Fill or open 1Password
             SEND_STRING(SS_LGUI(SS_LALT("\\")));
         }
