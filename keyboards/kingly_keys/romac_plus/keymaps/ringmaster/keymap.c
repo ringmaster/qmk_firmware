@@ -26,6 +26,7 @@ enum layers {
     _MID,
     _CAL,
     _COL,
+    _WAT,
     _DOC
 };
 
@@ -35,11 +36,36 @@ enum custom_keycodes {
     KC_LOCK_LSHIFT,
     KC_LOCK_LCTL,
     KC_DOCS,
-    KC_9_DEL
+    KC_9_DEL,
+    KC_SQ0,
+    KC_SQ1,
+    KC_SQ2,
+    KC_SQ3,
+    KC_SQ4,
+    KC_SQ5,
+    KC_SQ6,
+    KC_SQ7,
+    KC_SQ8,
+    KC_GAME_RESET,
 };
 
 bool menu_active = false;
 uint16_t key_is_down = KC_NO;
+
+
+enum states {
+    GAME_READY = 0,
+    GAME_O,
+    GAME_X,
+    GAME_OVER,
+};
+
+int game_state = GAME_READY;
+int game_timer;
+int cha = 1;
+int watb[9] = {0,0,0,0,0,0,0,0,0};
+int hturn = 1;
+int score = 0;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -92,11 +118,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS, RGB_MOD, RGB_TOG
     ),
 
+    [_WAT] = LAYOUT(
+        KC_SQ0, KC_SQ1, KC_SQ2,
+        KC_SQ3, KC_SQ4, KC_SQ5,
+        KC_SQ6, KC_SQ7, KC_SQ8,
+        KC_TRNS, KC_NO, KC_GAME_RESET
+    ),
+
     [_DOC] = LAYOUT(
         KC_NO, KC_NO, KC_NO,
         KC_NO, KC_NO, KC_NO,
         KC_NO, KC_NO, KC_NO,
-        KC_LMENU, KC_NO, KC_DOCS
+        KC_TRNS, KC_NO, KC_DOCS
     )
 };
 
@@ -106,6 +139,8 @@ void keyboard_post_init_user(void) {
   //debug_matrix=true;
   //debug_keyboard=true;
   //debug_mouse=true;
+
+  game_timer = timer_read();
 }
 
 //#ifdef OLED_DRIVER_ENABLE
@@ -121,6 +156,40 @@ void blank(int lines) {
     for(z = 0; z < lines; z++) {
         oled_write_P(PSTR("     "), false);
     }
+}
+
+void render_wat(void) {
+    static char led_buf[50];
+
+    static char syms[3] = {32, 131, 132};
+
+    snprintf(led_buf, sizeof(led_buf) - 1, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+        syms[watb[0]], 129, syms[watb[1]], 129, syms[watb[2]],
+        128, 130, 128, 130, 128,
+        syms[watb[3]], 129, syms[watb[4]], 129, syms[watb[5]],
+        128, 130, 128, 130, 128,
+        syms[watb[6]], 129, syms[watb[7]], 129, syms[watb[8]]);
+    oled_write(led_buf, false);
+
+    snprintf(led_buf, sizeof(led_buf) - 1, "\x10 %c \x11", syms[hturn]);
+    oled_write(led_buf, false);
+    snprintf(led_buf, sizeof(led_buf) - 1, "S: %d", score);
+    oled_write(led_buf, false);
+    oled_write_P(PSTR("\n"), false);
+
+    switch (game_state) {
+        case GAME_READY:
+            oled_write_P(PSTR("READY"), false);
+            break;
+        case GAME_OVER:
+            oled_write_P(PSTR("GAME\nOVER\n"), false);
+            break;
+        default:
+            oled_write_P(PSTR(" GO!"), false);
+            break;
+    }
+
+    blank(4);
 }
 
 void oled_task_user(void) {
@@ -158,6 +227,9 @@ void oled_task_user(void) {
         case _CAL:
             oled_write_P(PSTR("CAL"), false);
             break;
+        case _WAT:
+            oled_write_P(PSTR("WAT"), false);
+            break;
         case _DOC:
             oled_write_P(PSTR("DOC"), false);
             break;
@@ -172,7 +244,9 @@ void oled_task_user(void) {
     else {
         oled_write_ln_P(PSTR(" "), false);
     }
-    oled_write_P(PSTR("-----"), false);
+    snprintf(led_buf, sizeof(led_buf) - 1, "%c%c%c%c%c", 128, 128, 128, 128, 128);
+    oled_write(led_buf, false);
+
     oled_write_P(PSTR("     "), false);
 
     //*/
@@ -227,6 +301,10 @@ void oled_task_user(void) {
             blank(10);
             break;
 
+        case _WAT:
+            render_wat();
+            break;
+
         case _CAL:
             blank(10);
             break;
@@ -252,6 +330,136 @@ void oled_task_user(void) {
     //*/
 }
 //#endif
+
+int check_line(int a, int b, int c) {
+    if (watb[a] == watb[b] && watb[b] == watb[c]) return watb[a];
+    return 0;
+}
+
+int check_board(void) {
+    int wincond[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
+
+    for(int z = 0; z < 8; z++) {
+        if (check_line(wincond[z][0], wincond[z][1], wincond[z][2]) != 0) {
+            return check_line(wincond[z][0], wincond[z][1], wincond[z][2]);
+        }
+    }
+    for(int y = 0; y < 9; y++) {
+        if (watb[y] == 0) return 0;
+    }
+    return -1;
+}
+
+int check_board_clear(int move, int player) {
+    int wincond[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
+    int alternate = 3 - player;
+    bool clear_line;
+
+    for(int z = 0; z < 8; z++) {
+        clear_line = false;
+        // if the move is in line with what is being checked
+        if (wincond[z][0] == move) {
+            if (watb[wincond[z][1]] == alternate && watb[wincond[z][2]] == alternate) {
+                clear_line = true;
+            }
+        }
+        if (wincond[z][1] == move) {
+            if (watb[wincond[z][0]] == alternate && watb[wincond[z][2]] == alternate) {
+                clear_line = true;
+            }
+        }
+        if (wincond[z][2] == move) {
+            if (watb[wincond[z][0]] == alternate && watb[wincond[z][1]] == alternate) {
+                clear_line = true;
+            }
+        }
+
+        if (clear_line) {
+            score++;
+            for (int y = 0; y < 3; y++) {
+                watb[wincond[z][y]] = 0;
+            }
+        }
+    }
+    return check_board();
+}
+
+void clear_board(void) {
+    watb[0] = 0;
+    watb[1] = 0;
+    watb[2] = 0;
+    watb[3] = 0;
+    watb[4] = 0;
+    watb[5] = 0;
+    watb[6] = 0;
+    watb[7] = 0;
+    watb[8] = 0;
+}
+
+void wat_ai(int player) {
+    int wincond;
+    int move;
+
+    wincond = check_board();
+
+    if (wincond == -1) {
+        game_state = GAME_OVER;
+    }
+    else {
+        do {
+            move = rand() % 9;
+        } while (watb[move] != 0);
+        dprintf("Move %d\n", move);
+        watb[move] = player;
+        wincond = check_board();
+        if (wincond != 0) {
+            game_state = GAME_OVER;
+        }
+    }
+}
+
+void wat_move(int space, int player, bool human) {
+    int wincond = 0;
+
+    if (watb[space] != 0) return;
+
+    watb[space] = player;
+    wincond = check_board();
+
+    if (wincond != 0) {
+        dprintf("%d check board\n", wincond);
+        game_state = GAME_OVER;
+    }
+    else {
+        if (human) {
+            check_board_clear(space, player);
+            hturn = 3 - hturn;
+        }
+    }
+}
+
+void wat_timer(void) {
+    switch (game_state) {
+    case GAME_READY:
+        break;
+    case GAME_O:
+        if (timer_elapsed(game_timer) >= 3000) {
+            wat_ai(2);
+            game_timer = timer_read();
+            game_state = GAME_X;
+        }
+        break;
+    case GAME_X:
+        if (timer_elapsed(game_timer) >= 3000) {
+            wat_ai(1);
+            game_timer = timer_read();
+            game_state = GAME_O;
+        }
+        break;
+    case GAME_OVER:
+        break;
+    }
+}
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     static uint16_t zero_timer;
@@ -341,6 +549,44 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             return false;
+        case KC_GAME_RESET:
+            clear_board();
+            game_state = GAME_READY;
+            score = 0;
+            return false;
+        case KC_SQ0:
+        case KC_SQ1:
+        case KC_SQ2:
+        case KC_SQ3:
+        case KC_SQ4:
+        case KC_SQ5:
+        case KC_SQ6:
+        case KC_SQ7:
+        case KC_SQ8:
+            if(record->event.pressed) {
+                switch (game_state) {
+                case GAME_READY:
+                    hturn = 1;
+                    wat_ai(1);
+                    game_state = GAME_O;
+                    break;
+                case GAME_X:
+                case GAME_O:
+                    switch (keycode) {
+                        case KC_SQ0: wat_move(0, hturn, true); return false;
+                        case KC_SQ1: wat_move(1, hturn, true); return false;
+                        case KC_SQ2: wat_move(2, hturn, true); return false;
+                        case KC_SQ3: wat_move(3, hturn, true); return false;
+                        case KC_SQ4: wat_move(4, hturn, true); return false;
+                        case KC_SQ5: wat_move(5, hturn, true); return false;
+                        case KC_SQ6: wat_move(6, hturn, true); return false;
+                        case KC_SQ7: wat_move(7, hturn, true); return false;
+                        case KC_SQ8: wat_move(8, hturn, true); return false;
+                    }
+                    break;
+                }
+            }
+            return false;
     }
 
     if (keycode != KC_LOCK_LSHIFT) {
@@ -354,6 +600,18 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
     return true;
 };
+
+void matrix_scan_user(void) {
+    uint8_t layer = biton32(layer_state);
+
+    // INSERT CODE HERE: turn off all leds
+
+    switch (layer) {
+    case _WAT:
+        wat_timer();
+        break;
+    }
+}
 
 void knob_color(bool clockwise) {
     switch (key_is_down) {
@@ -455,6 +713,13 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                         midi_config.octave--;
                         dprintf("midi octave %d\n", midi_config.octave);
                     }
+                }
+                break;
+            case _WAT:
+                if (clockwise) {
+                    cha++;
+                } else {
+                    cha--;
                 }
                 break;
             default:
